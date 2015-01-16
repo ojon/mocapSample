@@ -2,6 +2,7 @@ clear;
 clc;
 [skel channelsMatrix] = bvhReadFile('./throw.bvh');
 load('./transmatf_IPI.mat');
+load('dadosThrow0.mat');
 angs = []
 
 for i = 1:94
@@ -37,6 +38,9 @@ for i = 1:94
     relROT = (hRot*transmat{1})' * (tRot*transmat{18});
     
     ang = euler_rot(relROT,1);
+    EULER(:,i) = ang;
     
     angs = [angs ang];
 end
+    EULER = deg2rad(EULER'); EULER = unwrap(EULER,pi()*0.9); EULER = rad2deg(EULER);
+    EULER = EULER';
