@@ -1,46 +1,50 @@
 clear;
 clc;
-[skel channelsMatrix] = bvhReadFile('./throw.bvh');
 load('./transmatf_IPI.mat');
 load('dadosThrow0.mat');
-angs = []
 
-for i = 1:94
+[skel channelsMatrix] = bvhReadFile('./throw.bvh');
+
+nFrames = size(channelsMatrix,1)
+
+for i = 1:nFrames
     
+    %valores dos canais para o frame 1
     channelsFrame = channelsMatrix(i,:)
     
-    %Hip
-    xHAngleDegree = channelsFrame(skel.tree(1).rotInd(1));
-    yHAngleDegree = channelsFrame(skel.tree(1).rotInd(2));
-    zHAngleDegree = channelsFrame(skel.tree(1).rotInd(3));
+    %angulos do arquivo bvh para a articulacao/segmento do quadril(1)
+    %valores em rad no frame atual
+    [xHangle yHangle zHangle] = originalAngles(1,channelsFrame,skel);
     
-    xHangle = deg2rad(xHAngleDegree);
-    yHangle = deg2rad(yHAngleDegree);
-    zHangle = deg2rad(zHAngleDegree);
-    
+    %matriz de rotacao do quadril    
     hRot = rotationMatrix(xHangle, yHangle, zHangle, skel.tree(1).order);
     
-    %RThight
-    xTAngleDegree = channelsFrame(skel.tree(18).rotInd(1));
-    yTAngleDegree = channelsFrame(skel.tree(18).rotInd(2));
-    zTAngleDegree = channelsFrame(skel.tree(18).rotInd(3));
+    %angulos do arquivo bvh para a articulaca/segmento da coxa(18)    
+    [xTangle yTangle zTangle] = originalAngles(18,channelsFrame,skel);
     
-    xTangle = deg2rad(xTAngleDegree);
-    yTangle = deg2rad(yTAngleDegree);
-    zTangle = deg2rad(zTAngleDegree);
+    %matriz de rotacao da coxa    
+    tRot = rotationMatrix(xTangle, yTangle, zTangle, skel.tree(18).order);        
+    tRot = hRot * tRot;
     
-    tRot = rotationMatrix(xTangle, yTangle, zTangle, skel.tree(18).order);
+    %matriz de rotacao relativa??
+    %transmat eh a matriz de rotacao especifica para padroes IPI
+    hipRelROT = (hRot*transmat{1})' * (tRot*transmat{18});
     
-    %relROT = hRot' * tRot;
+    hipAng = euler_rot(hipRelROT,1);
+    hipAngs(:,i) = hipAng;
     
-    %euler_rot(relROT,1)
+    %angulos do arquivo bvh para a articulacao/segmento da perna(19)    
+    [xSangle ySangle zSangle] = originalAngles(19,channelsFrame,skel);
     
-    relROT = (hRot*transmat{1})' * (tRot*transmat{18});
+    %matriz de rotacao da perna    
+    sRot = rotationMatrix(xSangle, ySangle, zSangle, skel.tree(19).order);        
+    sRot = tRot * sRot;
     
-    ang = euler_rot(relROT,1);
-    EULER(:,i) = ang;
+    %matriz de rotacao relativa??
+    %transmat eh a matriz de rotacao especifica para padroes IPI
+    kneeRelROT = (tRot*transmat{18})' * (sRot*transmat{19});
     
-    angs = [angs ang];
+    kneeAng = euler_rot(kneeRelROT,1);
+    KneeAngs(:,i) = kneeAng;
+                    
 end
-    EULER = deg2rad(EULER'); EULER = unwrap(EULER,pi()*0.9); EULER = rad2deg(EULER);
-    EULER = EULER';
